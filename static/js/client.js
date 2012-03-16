@@ -1,5 +1,5 @@
 $(window).load(function () {
-    socket = io.connect('http://127.0.0.1:1337');
+    socket = io.connect('http://10.12.7.208:1337');
     socket.on('test', function (data) {
         controller.refresh(data);
     });
@@ -22,28 +22,16 @@ luster.Controller = function () {
 * The mapping for the lanterns - because the lanterns are all connected
 * via a single cable.
 */
-luster.Controller.prototype.lanternInitMapping = [
-                [42, 43, 44, 45, 46, 47, 48], /** 47, 47 **/
-                [41, 40, 39, 38, 37, 36, 35],
-                [28, 29, 30, 31, 32, 33, 34],
-                [27, 26, 25, 24, 23, 22, 21],
-                [14, 15, 16, 17, 18, 19, 20],
-                [13, 12, 11, 10, 9, 8, 7],
-    /** 0,0 **/ [0, 1, 2, 3, 4, 5, 6]
-];
 
-/**
-* 'XY' ordered
-*/
-luster.Controller.prototype.XYMap = [
-    /** 0,0 **/ [0, 1, 2, 3, 4, 5, 6],
-                [13, 12, 11, 10, 9, 8, 7],
-                [14, 15, 16, 17, 18, 19, 20],
-                [27, 26, 25, 24, 23, 22, 21],
-                [28, 29, 30, 31, 32, 33, 34],
-                [41, 40, 39, 38, 37, 36, 35],
-                [42, 43, 44, 45, 46, 47, 48] /** 7, 7 **/
-]
+luster.Controller.prototype.lanternInitMapping = [
+    [48, 35, 34, 21, 20, 7, 6],
+    [47, 36, 33, 22, 19, 8, 5],
+    [46, 37, 32, 23, 18, 9, 4],
+    [45, 38, 31, 24, 17, 10, 3],
+    [44, 39, 30, 25, 16, 11, 2],
+    [43, 40, 29, 26, 15, 12, 1],
+    [42, 41, 28, 27, 14, 13, 0],
+];
 
 /** Used for lantern retrieval **/
 luster.Controller.prototype.lanternMap = {};
@@ -81,18 +69,14 @@ luster.Controller.prototype.initializeLanterns = function () {
 /** Bind all buttons and input types **/
 luster.Controller.prototype.bindAll = function () {
     $('div#buttons input[name=clear]').click($.proxy(this.clearLanterns, this));
-    $('div#buttons input[name=reset]').click($.proxy(this.resetLanterns, this));
-    $('div#buttons input[name=stop]').click($.proxy(this.stopStream, this));
-    $('div#buttons input[name=start]').click($.proxy(this.startStream, this));
-    $('div#buttons input[name=draw]').click($.proxy(this.drawCurrentFrame, this));
+    $('div#buttons input[name=erase]').click($.proxy(this.eraseMode, this));
     this.colorPicker = $('div#colorpicker').farbtastic($.proxy(this.changeColor, this));
 };
 
 /** Create a lantern object and add it **/
 luster.Controller.prototype.addLantern = function (id, xCoord, yCoord, size) {
     var lanternSVG = this.paper.circle(xCoord, yCoord, size);
-    var labelSVG = this.paper.text(xCoord, yCoord, id);
-    var lantern = new luster.Lantern(id, lanternSVG, labelSVG);
+    var lantern = new luster.Lantern(id, lanternSVG);
 
     this.svgIDMap[lanternSVG.id] = lantern;
     this.lanternArray.push(lantern);
@@ -101,57 +85,34 @@ luster.Controller.prototype.addLantern = function (id, xCoord, yCoord, size) {
 
 /** Clear all the lanterns **/
 luster.Controller.prototype.clearLanterns = function () {
+    var datagram = {
+        "lights": {}
+
+    };
+
     $.each(this.lanternArray, function () {
         this.svg.attr('fill', '#ffffff');
-    });
-};
-
-/** Stop the stream AND clear the lanterns **/
-luster.Controller.prototype.resetLanterns = function () {
-    this.stopStream();
-    this.clearLanterns();
-};
-
-/** Stop the stream of data **/
-luster.Controller.prototype.stopStream = function () {
-    socket.emit('stop-test', {});
-};
-
-/** Start the stream of data **/
-luster.Controller.prototype.startStream = function () {
-    socket.emit('start-test', {});
-};
-
-luster.Controller.prototype.drawCurrentFrame = function () {
-    // Hex to rgb values, and then have to emit a 'draw-frame' event
-    var datagram = {"lights": {}};
-    var controller = this;
-
-    $.each(this.lanternArray, function () {
         var rgbObj = Raphael.getRGB(this.svg.attr('fill'));
-        datagram['lights'][this.id] = {
-            'r': rgbObj.r,
-            'g': rgbObj.g,
-            'b': rgbObj.b
-        };
+
+        datagram["lights"][this.id] = {
+            "r": 0,
+            "g": 0,
+            "b": 0,
+            "i": 0
+        }
     });
 
-    socket.emit('draw-frame', datagram);
+    socket.emit('draw', datagram);
+};
+
+/** Erase mode - just reset the canvas :) **/
+luster.Controller.prototype.eraseMode = function () {
+    this.COLOR = "#ffffff";
 };
 
 /** Callback for farbtastic, tocall whenever the color is changed **/
 luster.Controller.prototype.changeColor = function (newColor) {
     this.COLOR = newColor;
-};
-
-/** Get and return the lantern object by its XY coordinate **/
-luster.Controller.prototype.getLanternByXY = function (xCoord, yCoord) {
-    if (xCoord > this.SIZE_X || yCoord > this.SIZE_Y || xCoord < 0 || yCoord < 0) {
-        throw "IndexOutOfBounds: One or more of the provided coordinates are out of bounds"
-    }
-
-    var id = this.XYMap[xCoord][yCoord];
-    return this.getLanternByID(id);
 };
 
 /** Get and return the lantern object by its numerical ID **/
@@ -170,12 +131,11 @@ luster.Controller.prototype.refresh = function (data) {
 };
 
 /** lantern object **/
-luster.Lantern = function (id, lanternSVG, labelSVG) {
+luster.Lantern = function (id, lanternSVG) {
     this.id = id;
     this.svg = lanternSVG;
-    this.label = labelSVG;
     this.svg.attr('fill', '#ffffff');
-    this.svg.click(this.pickColor);
+    this.svg.click($.proxy(this.singleClick, this));
     this.svg.drag(this.onMove, $.proxy(this.moveStart, this), this.moveEnd, this, this, this);
     this.svg.onDragOver($.proxy(this.onDragOver, this));
 };
@@ -191,13 +151,17 @@ luster.Lantern.prototype.reset = function () {
     this.svg.attr('fill', '#ffffff');
 };
 
+luster.Lantern.prototype.singleClick = function () {
+    this.onDragOver(this.svg);
+};
+
 luster.Lantern.prototype.onMove = function () {
     return;
 };
 
 luster.Lantern.prototype.moveStart = function () {
     this.svg.attr('fill', controller.COLOR);
-    return;
+    this.onDragOver(this.svg);
 };
 
 luster.Lantern.prototype.moveEnd = function () {
@@ -206,24 +170,26 @@ luster.Lantern.prototype.moveEnd = function () {
 
 luster.Lantern.prototype.onDragOver = function (draggedOverElement) {
     draggedOverElement.attr('fill', controller.COLOR);
-    // If interactive draw mode is on, show changes as they're being drawn
-    if (controller.DRAW_MODE_INTERACTIVE) {
-        var lantern = controller.svgIDMap[draggedOverElement.id];
-        if (lantern) {
-            // Figure out RGB...
-            var rgbObj = Raphael.getRGB(lantern.svg.attr('fill'));
-            var datagram = {
-                "lights": {}
-            };
+    var lantern = controller.svgIDMap[draggedOverElement.id];
+    if (lantern) {
+        // Figure out RGB...
+        var rgbObj = Raphael.getRGB(lantern.svg.attr('fill'));
+        var datagram = {
+            "lights": {}
+        };
 
-            // Fully transportable.
-            datagram["lights"][lantern.id] = {
-                "r": rgbObj.r,
-                "g": rgbObj.g,
-                "b": rgbObj.b,
-            }
-            socket.emit('draw-partial', datagram);
+        var r = Math.floor(rgbObj.r/16);
+        var g = Math.floor(rgbObj.g/16);
+        var b = Math.floor(rgbObj.b/16);
+
+        // Fully transportable.
+        datagram["lights"][lantern.id] = {
+            "r": Math.floor(r),
+            "g": Math.floor(g),
+            "b": Math.floor(b),
+            "i": (r+g+b) * 5
         }
+        socket.emit('draw', datagram);
     }
 };
 
