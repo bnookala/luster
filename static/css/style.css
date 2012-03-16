@@ -2,11 +2,15 @@ div#container {
 	margin-left: auto;
 	margin-right: auto;
 	margin-top: 25px;
-	width: 575px;
+	width: 555px;
 	background-color: #f0f0f0;
+	border: 1px solid black;
 }
 
-svg {
-	margin-left: auto;
-	margin-right: auto;
+div#top {
+	border-bottom: 3px solid black;
+}
+
+div#bottom {
+	margin-top: 15px;
 }

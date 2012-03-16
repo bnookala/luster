@@ -13,7 +13,7 @@ window.luster = {};
 /** controller object **/
 
 luster.Controller = function () {
-    this.paper = Raphael('paper', 575, 575);
+    this.paper = Raphael('paper', 555, 555);
     this.initializeLanterns();
     this.bindAll();
 };
@@ -48,11 +48,17 @@ luster.Controller.prototype.XYMap = [
 /** Used for lantern retrieval **/
 luster.Controller.prototype.lanternMap = {};
 
+luster.Controller.prototype.svgIDMap = {};
+
 /** Used for batch operations on lanterns **/
 luster.Controller.prototype.lanternArray = [];
 
 luster.Controller.prototype.SIZE_X = 6;
 luster.Controller.prototype.SIZE_Y = 6;
+
+luster.Controller.prototype.COLOR = '#000000';
+
+luster.Controller.prototype.DRAW_MODE_INTERACTIVE = true;
 
 /**
 * Initalize lanterns on the client
@@ -68,17 +74,18 @@ luster.Controller.prototype.initializeLanterns = function () {
             controller.addLantern(this[i], x, y, 30);
             x += 75;
         };
-        console.log(x);
         y += 75;
     });
 };
 
+/** Bind all buttons and input types **/
 luster.Controller.prototype.bindAll = function () {
     $('div#buttons input[name=clear]').click($.proxy(this.clearLanterns, this));
     $('div#buttons input[name=reset]').click($.proxy(this.resetLanterns, this));
     $('div#buttons input[name=stop]').click($.proxy(this.stopStream, this));
     $('div#buttons input[name=start]').click($.proxy(this.startStream, this));
-    $('div#colorpicker').farbtastic('#color');
+    $('div#buttons input[name=draw]').click($.proxy(this.drawCurrentFrame, this));
+    this.colorPicker = $('div#colorpicker').farbtastic($.proxy(this.changeColor, this));
 };
 
 /** Create a lantern object and add it **/
@@ -86,6 +93,8 @@ luster.Controller.prototype.addLantern = function (id, xCoord, yCoord, size) {
     var lanternSVG = this.paper.circle(xCoord, yCoord, size);
     var labelSVG = this.paper.text(xCoord, yCoord, id);
     var lantern = new luster.Lantern(id, lanternSVG, labelSVG);
+
+    this.svgIDMap[lanternSVG.id] = lantern;
     this.lanternArray.push(lantern);
     this.lanternMap[id] = lantern;
 };
@@ -93,24 +102,36 @@ luster.Controller.prototype.addLantern = function (id, xCoord, yCoord, size) {
 /** Clear all the lanterns **/
 luster.Controller.prototype.clearLanterns = function () {
     $.each(this.lanternArray, function () {
-        this.svg.attr('fill', 'none');
+        this.svg.attr('fill', '#ffffff');
     });
 };
 
+/** Stop the stream AND clear the lanterns **/
 luster.Controller.prototype.resetLanterns = function () {
     this.stopStream();
     this.clearLanterns();
 };
 
+/** Stop the stream of data **/
 luster.Controller.prototype.stopStream = function () {
     socket.emit('stop-test', {});
 };
 
+/** Start the stream of data **/
 luster.Controller.prototype.startStream = function () {
     socket.emit('start-test', {});
 };
 
-/** Get and return the lantern by object by its XY coordinate **/
+luster.Controller.prototype.drawCurrentFrame = function () {
+    // Hex to rgb values, and then have to emit a 'draw-frame' event
+};
+
+/** Callback for farbtastic, tocall whenever the color is changed **/
+luster.Controller.prototype.changeColor = function (newColor) {
+    this.COLOR = newColor;
+};
+
+/** Get and return the lantern object by its XY coordinate **/
 luster.Controller.prototype.getLanternByXY = function (xCoord, yCoord) {
     if (xCoord > this.SIZE_X || yCoord > this.SIZE_Y || xCoord < 0 || yCoord < 0) {
         throw "IndexOutOfBounds: One or more of the provided coordinates are out of bounds"
@@ -125,6 +146,7 @@ luster.Controller.prototype.getLanternByID = function (id) {
     return this.lanternMap[id];
 };
 
+/** Fill each of the lanterns with data from the new frame **/
 luster.Controller.prototype.refresh = function (data) {
     var controller = this;
 
@@ -139,6 +161,10 @@ luster.Lantern = function (id, lanternSVG, labelSVG) {
     this.id = id;
     this.svg = lanternSVG;
     this.label = labelSVG;
+    this.svg.attr('fill', '#ffffff');
+    this.svg.click(this.pickColor);
+    this.svg.drag(this.onMove, $.proxy(this.moveStart, this), this.moveEnd, this, this, this);
+    this.svg.onDragOver($.proxy(this.onDragOver, this));
 };
 
 /** Set the color of the lantern **/
@@ -149,7 +175,34 @@ luster.Lantern.prototype.setColor = function (r, g, b) {
 
 /** Reset a single lantern **/
 luster.Lantern.prototype.reset = function () {
-    this.svg.attr('fill', 'none');
-}
+    this.svg.attr('fill', '#ffffff');
+};
 
+luster.Lantern.prototype.onMove = function () {
+    return;
+};
+
+luster.Lantern.prototype.moveStart = function () {
+    this.svg.attr('fill', controller.COLOR);
+    return;
+};
+
+luster.Lantern.prototype.moveEnd = function () {
+    return;
+};
+
+luster.Lantern.prototype.onDragOver = function (draggedOverElement) {
+    draggedOverElement.attr('fill', controller.COLOR);
+    // If interactive draw mode is on, show changes as they're being drawn
+    if (controller.DRAW_MODE_INTERACTIVE) {
+        var lantern = controller.svgIDMap[draggedOverElement.id];
+        if (lantern) {
+            // Figure out RGB...
+            var datagram = {
+                id: lantern.id
+            };
+            socket.emit('draw-partial', datagram);
+        }
+    }
+};
 

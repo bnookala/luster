@@ -3,13 +3,14 @@ var app = express.createServer().listen(1337);
 var io = require('socket.io').listen(app);
 
 app.use(express.static(__dirname + '/static'));
+app.use(express.bodyParser());
 
 app.get('/', function (request, response) {
 	response.render('view/index.html');
 });
 
 app.post('/', function (request, response) {
-	console.log(request);
+	console.log(request.body);
 });
 
 io.sockets.on('connection', function (socket) {
@@ -18,8 +19,16 @@ io.sockets.on('connection', function (socket) {
 		interval = setInterval(testColorChange, 250);
 	});
 
-	socket.on('stop-test', function (socket) {
+	socket.on('stop-test', function (data) {
 		clearInterval(interval);
+	});
+
+	socket.on('draw-frame', function (data) {
+		console.log(data);
+	});
+
+	socket.on('draw-partial', function (data) {
+		console.log(data);
 	});
 });
 
