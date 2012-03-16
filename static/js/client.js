@@ -13,7 +13,7 @@ window.luster = {};
 /** controller object **/
 
 luster.Controller = function () {
-    this.paper = Raphael('paper', 800, 800);
+    this.paper = Raphael('paper', 575, 575);
     this.initializeLanterns();
     this.bindAll();
 };
@@ -59,15 +59,16 @@ luster.Controller.prototype.SIZE_Y = 6;
 */
 luster.Controller.prototype.initializeLanterns = function () {
     var controller = this;
-    var x = 250;
+    var x = 50;
     var y = 50;
 
     $.each(this.lanternInitMapping, function () {
-        x = 250;
+        x = 50;
         for (var i=0; i < this.length; i++) {
             controller.addLantern(this[i], x, y, 30);
             x += 75;
         };
+        console.log(x);
         y += 75;
     });
 };
@@ -77,6 +78,7 @@ luster.Controller.prototype.bindAll = function () {
     $('div#buttons input[name=reset]').click($.proxy(this.resetLanterns, this));
     $('div#buttons input[name=stop]').click($.proxy(this.stopStream, this));
     $('div#buttons input[name=start]').click($.proxy(this.startStream, this));
+    $('div#colorpicker').farbtastic('#color');
 };
 
 /** Create a lantern object and add it **/

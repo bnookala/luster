@@ -1,9 +1,12 @@
+<!DOCTYPE html>
 <html>
 	<head>
 		<link rel="stylesheet" type="text/css" href="css/style.css"/>
+		<link rel="stylesheet" type="text/css" href="css/farbtastic.css"/>
 		<script src="/socket.io/socket.io.js"></script>
 		<script src="js/raphael.min.js"></script>
 		<script src="js/jquery.min.js"></script>
+		<script src="js/farbtastic.js"></script>
 		<script src="js/client.js"></script>
 	</head>
 	<body>
@@ -23,6 +26,10 @@
 				<span>
 					<input type="button" name="reset" value="Reset"/>
 				</span>
+			</div>
+			<div id="picker">
+				<input type="text" id="color"/>
+				<div id="colorpicker"></div>
 			</div>
 		</div>
 	</body>

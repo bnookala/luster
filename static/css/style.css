@@ -2,7 +2,11 @@ div#container {
 	margin-left: auto;
 	margin-right: auto;
 	margin-top: 25px;
-	width: 900px;
-	height: 900px;
+	width: 575px;
 	background-color: #f0f0f0;
+}
+
+svg {
+	margin-left: auto;
+	margin-right: auto;
 }
