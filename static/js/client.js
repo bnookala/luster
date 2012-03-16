@@ -1,9 +1,9 @@
 $(window).load(function () {
-    controller = new luster.Controller();
     socket = io.connect('http://127.0.0.1:1337');
     socket.on('test', function (data) {
         controller.refresh(data);
     });
+    controller = new luster.Controller();
 });
 
 /** luster namespace **/
@@ -15,6 +15,7 @@ window.luster = {};
 luster.Controller = function () {
     this.paper = Raphael('paper', 800, 800);
     this.initializeLanterns();
+    this.bindAll();
 };
 
 /**
@@ -31,6 +32,9 @@ luster.Controller.prototype.lanternInitMapping = [
     /** 0,0 **/ [0, 1, 2, 3, 4, 5, 6]
 ];
 
+/**
+* 'XY' ordered
+*/
 luster.Controller.prototype.XYMap = [
     /** 0,0 **/ [0, 1, 2, 3, 4, 5, 6],
                 [13, 12, 11, 10, 9, 8, 7],
@@ -43,6 +47,9 @@ luster.Controller.prototype.XYMap = [
 
 /** Used for lantern retrieval **/
 luster.Controller.prototype.lanternMap = {};
+
+/** Used for batch operations on lanterns **/
+luster.Controller.prototype.lanternArray = [];
 
 luster.Controller.prototype.SIZE_X = 6;
 luster.Controller.prototype.SIZE_Y = 6;
@@ -65,12 +72,40 @@ luster.Controller.prototype.initializeLanterns = function () {
     });
 };
 
+luster.Controller.prototype.bindAll = function () {
+    $('div#buttons input[name=clear]').click($.proxy(this.clearLanterns, this));
+    $('div#buttons input[name=reset]').click($.proxy(this.resetLanterns, this));
+    $('div#buttons input[name=stop]').click($.proxy(this.stopStream, this));
+    $('div#buttons input[name=start]').click($.proxy(this.startStream, this));
+};
+
 /** Create a lantern object and add it **/
 luster.Controller.prototype.addLantern = function (id, xCoord, yCoord, size) {
     var lanternSVG = this.paper.circle(xCoord, yCoord, size);
     var labelSVG = this.paper.text(xCoord, yCoord, id);
     var lantern = new luster.Lantern(id, lanternSVG, labelSVG);
+    this.lanternArray.push(lantern);
     this.lanternMap[id] = lantern;
+};
+
+/** Clear all the lanterns **/
+luster.Controller.prototype.clearLanterns = function () {
+    $.each(this.lanternArray, function () {
+        this.svg.attr('fill', 'none');
+    });
+};
+
+luster.Controller.prototype.resetLanterns = function () {
+    this.stopStream();
+    this.clearLanterns();
+};
+
+luster.Controller.prototype.stopStream = function () {
+    socket.emit('stop-test', {});
+};
+
+luster.Controller.prototype.startStream = function () {
+    socket.emit('start-test', {});
 };
 
 /** Get and return the lantern by object by its XY coordinate **/
@@ -109,5 +144,10 @@ luster.Lantern.prototype.setColor = function (r, g, b) {
     var value = Raphael.rgb(r, g, b);
     this.svg.attr('fill', value);
 };
+
+/** Reset a single lantern **/
+luster.Lantern.prototype.reset = function () {
+    this.svg.attr('fill', 'none');
+}
 
 

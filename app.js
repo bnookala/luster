@@ -43,13 +43,15 @@ function requestHandler (request, response) {
 }
 
 io.sockets.on('connection', function (socket) {
-	var test = [
-		{id: 1, r: 244, g: 200, b: 200}
-	]
-	socket.emit('test', test);
-});
+	var interval = undefined;
+	socket.on('start-test', function (data) {
+		interval = setInterval(testColorChange, 250);
+	});
 
-setInterval(testColorChange, 250);
+	socket.on('stop-test', function (socket) {
+		clearInterval(interval);
+	});
+});
 
 function testColorChange () {
 	var test = [];
