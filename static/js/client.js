@@ -13,7 +13,7 @@ window.luster = {};
 /** controller object **/
 
 luster.Controller = function () {
-    this.paper = Raphael('paper', 555, 555);
+    this.paper = Raphael('paper', 550, 550);
     this.initializeLanterns();
     this.bindAll();
 };

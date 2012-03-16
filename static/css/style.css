@@ -1,16 +1,28 @@
 div#container {
-	margin-left: auto;
-	margin-right: auto;
-	margin-top: 25px;
-	width: 555px;
 	background-color: #f0f0f0;
-	border: 1px solid black;
 }
 
-div#top {
-	border-bottom: 3px solid black;
+div#left {
+	float: left;
 }
 
-div#bottom {
-	margin-top: 15px;
+div#right {
+	float: right;
+}
+
+div#paper {
+	border-right: 1px solid black;
+}
+
+div #buttons {
+	margin-top: 50px;
+	margin-right: auto;
+	margin-left: auto;
+	width: 195px;
+}
+
+input {
+	margin-bottom: 15px;
+	width: 195px;
+	height: 30px;
 }

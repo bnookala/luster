@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		<meta name="viewport" content="width=device-width, maximum-scale=2.3"/>
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
 		<link rel="stylesheet" type="text/css" href="css/style.css"/>
 		<link rel="stylesheet" type="text/css" href="css/farbtastic.css"/>
 		<script src="/socket.io/socket.io.js"></script>
@@ -11,20 +14,20 @@
 	</head>
 	<body>
 		<div id="container">
-			<div id="top">
+			<div id="left">
 				<div id="paper">
 				</div>
 			</div>
-			<div id="bottom">
-				<div id="buttons">
-					<span>
-						<input type="button" name="clear" value="Clear Lanterns"/>
-					</span>
-					<span>
-						<input type="button" name="erase" value="Erase Mode"/>
-					</span>
-				</div>
+			<div id="right">
 				<div id="colorpicker"></div>
+				<div id="buttons">
+					<div>
+						<input type="button" name="clear" value="Clear Lanterns"/>
+					</div>
+					<div>
+						<input type="button" name="erase" value="Erase Mode"/>
+					</div>
+				</div>
 			</div>
 		</div>
 	</body>
