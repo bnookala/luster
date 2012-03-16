@@ -124,6 +124,19 @@ luster.Controller.prototype.startStream = function () {
 
 luster.Controller.prototype.drawCurrentFrame = function () {
     // Hex to rgb values, and then have to emit a 'draw-frame' event
+    var datagram = {"lights": {}};
+    var controller = this;
+
+    $.each(this.lanternArray, function () {
+        var rgbObj = Raphael.getRGB(this.svg.attr('fill'));
+        datagram['lights'][this.id] = {
+            'r': rgbObj.r,
+            'g': rgbObj.g,
+            'b': rgbObj.b
+        };
+    });
+
+    socket.emit('draw-frame', datagram);
 };
 
 /** Callback for farbtastic, tocall whenever the color is changed **/
@@ -198,9 +211,17 @@ luster.Lantern.prototype.onDragOver = function (draggedOverElement) {
         var lantern = controller.svgIDMap[draggedOverElement.id];
         if (lantern) {
             // Figure out RGB...
+            var rgbObj = Raphael.getRGB(lantern.svg.attr('fill'));
             var datagram = {
-                id: lantern.id
+                "lights": {}
             };
+
+            // Fully transportable.
+            datagram["lights"][lantern.id] = {
+                "r": rgbObj.r,
+                "g": rgbObj.g,
+                "b": rgbObj.b,
+            }
             socket.emit('draw-partial', datagram);
         }
     }
