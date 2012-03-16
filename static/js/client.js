@@ -46,7 +46,7 @@ luster.Controller.prototype.SIZE_Y = 6;
 
 luster.Controller.prototype.COLOR = '#000000';
 
-luster.Controller.prototype.DRAW_MODE_INTERACTIVE = true;
+luster.Controller.prototype.ERASE_MODE = false;
 
 /**
 * Initalize lanterns on the client
@@ -69,7 +69,8 @@ luster.Controller.prototype.initializeLanterns = function () {
 /** Bind all buttons and input types **/
 luster.Controller.prototype.bindAll = function () {
     $('div#buttons input[name=clear]').click($.proxy(this.clearLanterns, this));
-    $('div#buttons input[name=erase]').click($.proxy(this.eraseMode, this));
+    this.eraseButton = $('div#buttons input[name=erase]');
+    this.eraseButton.click($.proxy(this.eraseMode, this));
     this.colorPicker = $('div#colorpicker').farbtastic($.proxy(this.changeColor, this));
 };
 
@@ -107,7 +108,14 @@ luster.Controller.prototype.clearLanterns = function () {
 
 /** Erase mode - just reset the canvas :) **/
 luster.Controller.prototype.eraseMode = function () {
-    this.COLOR = "#ffffff";
+    this.ERASE_MODE = !this.ERASE_MODE;
+    if (this.ERASE_MODE) {
+        this.eraseButton.attr('value', 'Erase Mode ON');
+    } else {
+        this.eraseButton.attr('value', 'Erase Mode');
+    }
+
+    this.eraseButton.toggleClass('erase-mode', this.ERASE_MODE);
 };
 
 /** Callback for farbtastic, tocall whenever the color is changed **/
@@ -169,11 +177,19 @@ luster.Lantern.prototype.moveEnd = function () {
 };
 
 luster.Lantern.prototype.onDragOver = function (draggedOverElement) {
-    draggedOverElement.attr('fill', controller.COLOR);
+    var actualColor = controller.COLOR;
+
+    if (controller.ERASE_MODE) {
+        draggedOverElement.attr('fill', '#ffffff');
+        var actualColor = '#000000';
+    } else {
+        draggedOverElement.attr('fill', controller.COLOR);
+    }
+
     var lantern = controller.svgIDMap[draggedOverElement.id];
     if (lantern) {
         // Figure out RGB...
-        var rgbObj = Raphael.getRGB(lantern.svg.attr('fill'));
+        var rgbObj = Raphael.getRGB(actualColor);
         var datagram = {
             "lights": {}
         };
